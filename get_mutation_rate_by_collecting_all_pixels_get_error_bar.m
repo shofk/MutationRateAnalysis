@@ -1,10 +1,10 @@
-out_dir = 'D:\\MutationRateProject\\_20190429_%s_snalysis';
-isTaq = false;
+out_dir = 'D:\\MutationRateProject\\_20190501_%s_analysis2';
+isTaq = input('Taq:1 or BST:0?');
 
 
 max_fov = 120;
 graph_ = false;
-save_image = false;
+save_image = true;
 
 
 if isTaq
@@ -21,7 +21,7 @@ else % isBST
     ratios_low = ones(3, 12) * 0.20;
     ratios_high = ones(3, 12) * 1.50;
     to_gta_cutoff = 0.25;
-    to_c_cutoff = 0.4;
+    to_c_cutoff = 0.3;
     c_low = 0.25;
 end
 
@@ -106,7 +106,7 @@ for ifov = FOVs
 %                 idx = find(mut_itst > c_low + median(mut_itst) & sum(citst < to_c_cutoff * median_itst, 2) ~= 3 ...
 %                     & mut_itst < c_high + median(mut_itst) ...
 %                     & sum(citst > c_low + median(mut_itst) & citst < c_high + median(mut_itst), 2) == 1) - 1 + offset;
-                idx = find(mut_itst > std(mut_itst) * 1.5 & sum(citst < to_gta_cutoff * median_itst, 2) ~= 3) - 1 + offset;
+                idx = find(mut_itst > std(mut_itst) * 1.5 & sum(citst < to_gta_cutoff * median_itst, 2) == 2) - 1 + offset;
                 % record the number of mutations
                 iMut{iich, icyc} = idx;
                 if save_image
@@ -650,6 +650,12 @@ function final_rate = compile_mutation_rate(mutation_table, fov_list, nPoi)
         cyc = cycles{icyc};
         final_rate(icyc, :) = sum(count(:, cyc), 2) / (nPoi * numel(cyc))';
     end
+    
+    final_rate = final_rate([3,4,1,2], :);
+    final_rate = final_rate(:, [3,4,1,2]);
+    
+    sum_ = sum(final_rate, 2);
+    final_rate(find(eye(4))) = 1 - sum_;
 end
 
 function [cycle_mutation_rate, by_channel_mutation_rates] = compile_cycle_mutation_rate(mutation_table, fov_list, nPoi, poi_counts)
