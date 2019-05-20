@@ -50,4 +50,4 @@ poi_count = size(poi_table, 1) / 3;
 function isWithin = within_border(coordinate)
 x = coordinate(1);
 y = coordinate(2);
-isWithin = x > 5 && x < 1019 && y > 5 && y < 1019;
+isWithin = x > 20 && x < 1004 && y > 20 && y < 1004;

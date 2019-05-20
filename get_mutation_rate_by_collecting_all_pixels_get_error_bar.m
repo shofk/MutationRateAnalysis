@@ -1,10 +1,10 @@
-out_dir = 'D:\\MutationRateProject\\_20190501_%s_analysis2';
+out_dir = 'D:\\MutationRateProject\\_20190520_%s_analysis';
 isTaq = input('Taq:1 or BST:0?');
 
 
 max_fov = 120;
 graph_ = false;
-save_image = true;
+save_image = false;
 
 
 if isTaq
@@ -121,9 +121,14 @@ for ifov = FOVs
             for iich = channel
                 if chN ~= iich
                     mut_itst = citst(:, iich);
-                    idx = find(mut_itst > main_itst * ratios_low(iich, icyc) & sum(citst < to_c_cutoff * median_itst, 2) == 1 ...
-                        & mut_itst < main_itst * ratios_high(iich, icyc) & (max(citst, [], 2) == main_itst | max(citst, [], 2) == mut_itst)) - 1 + offset;
-                    % record the number of mutations
+                    if isTaq
+                        idx = find(mut_itst > main_itst * ratios_low(iich, icyc) & sum(citst < to_c_cutoff * median_itst, 2) == 1 ...
+                            & mut_itst < main_itst * ratios_high(iich, icyc) & (max(citst, [], 2) == main_itst | max(citst, [], 2) == mut_itst)) - 1 + offset;
+                    else
+                        idx = find(mut_itst > main_itst * ratios_low(iich, icyc) & sum(citst < to_c_cutoff * median_itst, 2) == 1 ...
+                            & mut_itst < main_itst * ratios_high(iich, icyc) & (max(citst, [], 2) == main_itst | max(citst, [], 2) == mut_itst)) - 1 + offset;
+                    end
+                        % record the number of mutations
                     iMut{iich, icyc} = idx;
                     if save_image
                         map = zeros(1024);
@@ -155,7 +160,7 @@ if just_one
     final_rate = compile_mutation_rate(nMutations, FOVs, nPoi);
     [cycle_mutation_rate, by_channel_mutation_rates] = compile_cycle_mutation_rate(nMutations, FOVs, nPoi, poi_counts);
 
-    compile_results_with_error_bars(by_channel_mutation_rates, FOVs, out_dir);
+    compile_results_with_error_bars_8(nMutations, FOVs, out_dir, poi_counts);
     
     xlswrite(fullfile(out_dir, 'mutation_final_rate.xlsx'), final_rate);
     xlswrite(fullfile(out_dir, 'mutation_cycle_rate.xlsx'), cycle_mutation_rate);
@@ -675,6 +680,27 @@ function [cycle_mutation_rate, by_channel_mutation_rates] = compile_cycle_mutati
     end
 end
 
+function compile_results_with_error_bars_8(counts, fovs, file_dir, poi_counts)
+    n_groups = floor(length(fovs) / 8);
+    count = cell(n_groups);
+    nPoi_list = zeros(n_groups, 1);
+    for igroup = 0:n_groups - 1
+        ifov = fovs(igroup * 8 + 1 : (igroup + 1) * 8);
+        icount = zeros(4, 12);
+        for i = ifov
+            icount = icount + cellfun(@numel, counts{i});
+        end
+        count{igroup+1} = icount;
+        nPoi_list(igroup+1) = sum(poi_counts(ifov));
+    end
+    
+    rates = cell(n_groups, 1);
+    for ig = 1:n_groups
+        rates{ig} = count{ig} / nPoi_list(ig);
+    end
+    compile_results_with_error_bars(rates, 1:n_groups, file_dir);
+end
+
 function compile_results_with_error_bars(mutation_rates, Fovs, file_dir)
     cycles = cell(4,1);
     cycles{1} = [7, 10];      % G
@@ -684,47 +710,51 @@ function compile_results_with_error_bars(mutation_rates, Fovs, file_dir)
     folder = fullfile(file_dir, 'errorgraphs');
     mkdir(folder);
     
+    
     % A
-    for i = cycles{3}
-        aa = mutation_rates(:, i, Fovs);
-        aa = squeeze(aa)';
-        sd_a = std(aa, 1);
-        mn_a = mean(aa, 1);
-        fig = plot_with_error_bars(mn_a([1,2,4]), sd_a([1,2,4]), {'A to G','A to T','A to C'});
-        title(sprintf('Mutation from A Cycle %d', i));
-        saveas(fig, fullfile(folder, sprintf('Mutation from A Cycle %d.jpg', i)));
+    mut_to = [];
+    for ig = Fovs
+        mut_to = [mut_to, mutation_rates{ig}(:, cycles{3})];
     end
+    sd_a = std(mut_to, 1) / size(mut_to, 2);
+    mn_a = mean(mut_to, 1);
+    fig = plot_with_error_bars(mn_a([1,2,4]), sd_a([1,2,4]), {'A to G','A to T','A to C'});
+    ylim([0, 2.5e-3]);
+    title('Mutation from A Cycle');
+    saveas(fig, fullfile(folder, 'Mutation from A Cycle.jpg'));
     % C
-    for i = cycles{4}
-        cc = mutation_rates(:, i, Fovs);
-        cc = squeeze(cc)';
-        sd_c = std(cc, 1);
-        mn_c = mean(cc, 1);
-        fig = plot_with_error_bars(mn_c([1,2,3]), sd_c([1,2,3]), {'C to G','C to T','C to A'});
-        title(sprintf('Mutation from C Cycle %d', i));
-        saveas(fig, fullfile(folder, sprintf('Mutation from C Cycle %d.jpg', i)));
+    mut_to = [];
+    for ig = Fovs
+        mut_to = [mut_to, mutation_rates{ig}(:, cycles{4})];
     end
+    sd_c = std(mut_to, 1) / size(mut_to, 2);
+    mn_c = mean(mut_to, 1);
+    fig = plot_with_error_bars(mn_c([1,2,3]), sd_c([1,2,3]), {'C to G','C to T','C to A'});
+    ylim([0, 2.5e-3]);
+    title('Mutation from C Cycle');
+    saveas(fig, fullfile(folder, 'Mutation from C Cycle.jpg'));
     % G
-    for i = cycles{1}
-        gg = mutation_rates(:, i, Fovs);
-        gg = squeeze(gg)';
-        sd_g = std(gg, 1);
-        mn_g = mean(gg, 1);
-        fig = plot_with_error_bars(mn_g([2,3,4]), sd_g([2,3,4]), {'G to T','G to A','G to C'});
-        title(sprintf('Mutation from G Cycle %d', i));
-        saveas(fig, fullfile(folder, sprintf('Mutation from G Cycle %d.jpg', i)));
+    mut_to = [];
+    for ig = Fovs
+        mut_to = [mut_to, mutation_rates{ig}(:, cycles{1})];
     end
+    sd_g = std(mut_to, 1) / size(mut_to, 2);
+    mn_g = mean(mut_to, 1);
+    fig = plot_with_error_bars(mn_g([2,3,4]), sd_g([2,3,4]), {'G to T','G to A','G to C'});
+    ylim([0, 2.5e-3]);
+    title('Mutation from G');
+    saveas(fig, fullfile(folder, 'Mutation from G Cycle.jpg'));
     % T
-    for i = cycles{2}
-        tt = mutation_rates(:, i, Fovs);
-        tt = squeeze(tt)';
-        sd_t = std(tt, 1);
-        mn_t = mean(tt, 1);
-        fig = plot_with_error_bars(mn_t([1,3,4]), sd_t([1,3,4]), {'C to G','C to T','C to A'});
-        title(sprintf('Mutation from T Cycle %d', i));
-        saveas(fig, fullfile(folder, sprintf('Mutation from T Cycle %d.jpg', i)));
-        
+    mut_to = [];
+    for ig = Fovs
+        mut_to = [mut_to, mutation_rates{ig}(:, cycles{2})];
     end
+    sd_t = std(mut_to, 1) / size(mut_to, 2);
+    mn_t = mean(mut_to, 1);
+    fig = plot_with_error_bars(mn_t([1,3,4]), sd_t([1,3,4]), {'C to G','C to T','C to A'});
+    ylim([0, 2.5e-3]);
+    title('Mutation from T Cycle');
+    saveas(fig, fullfile(folder, 'Mutation from T Cycle.jpg'));
 end
 
 function fig = plot_with_error_bars(mean_val, std_val, labels)
