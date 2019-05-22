@@ -1,4 +1,4 @@
-out_dir = 'D:\\MutationRateProject\\_20190520_%s_analysis';
+out_dir = 'D:\\MutationRateProject\\_20190522_%s_analysis';
 isTaq = input('Taq:1 or BST:0?');
 
 
@@ -716,8 +716,8 @@ function compile_results_with_error_bars(mutation_rates, Fovs, file_dir)
     for ig = Fovs
         mut_to = [mut_to, mutation_rates{ig}(:, cycles{3})];
     end
-    sd_a = std(mut_to, 1) / size(mut_to, 2);
-    mn_a = mean(mut_to, 1);
+    sd_a = std(mut_to, [], 2) / sqrt(size(mut_to, 2));
+    mn_a = mean(mut_to, 2);
     fig = plot_with_error_bars(mn_a([1,2,4]), sd_a([1,2,4]), {'A to G','A to T','A to C'});
     ylim([0, 2.5e-3]);
     title('Mutation from A Cycle');
@@ -727,8 +727,8 @@ function compile_results_with_error_bars(mutation_rates, Fovs, file_dir)
     for ig = Fovs
         mut_to = [mut_to, mutation_rates{ig}(:, cycles{4})];
     end
-    sd_c = std(mut_to, 1) / size(mut_to, 2);
-    mn_c = mean(mut_to, 1);
+    sd_c = std(mut_to, [], 2) / sqrt(size(mut_to, 2));
+    mn_c = mean(mut_to, 2);
     fig = plot_with_error_bars(mn_c([1,2,3]), sd_c([1,2,3]), {'C to G','C to T','C to A'});
     ylim([0, 2.5e-3]);
     title('Mutation from C Cycle');
@@ -738,8 +738,8 @@ function compile_results_with_error_bars(mutation_rates, Fovs, file_dir)
     for ig = Fovs
         mut_to = [mut_to, mutation_rates{ig}(:, cycles{1})];
     end
-    sd_g = std(mut_to, 1) / size(mut_to, 2);
-    mn_g = mean(mut_to, 1);
+    sd_g = std(mut_to, [], 2) / sqrt(size(mut_to, 2));
+    mn_g = mean(mut_to, 2);
     fig = plot_with_error_bars(mn_g([2,3,4]), sd_g([2,3,4]), {'G to T','G to A','G to C'});
     ylim([0, 2.5e-3]);
     title('Mutation from G');
@@ -749,8 +749,8 @@ function compile_results_with_error_bars(mutation_rates, Fovs, file_dir)
     for ig = Fovs
         mut_to = [mut_to, mutation_rates{ig}(:, cycles{2})];
     end
-    sd_t = std(mut_to, 1) / size(mut_to, 2);
-    mn_t = mean(mut_to, 1);
+    sd_t = std(mut_to, [], 2) / sqrt(size(mut_to, 2));
+    mn_t = mean(mut_to, 2);
     fig = plot_with_error_bars(mn_t([1,3,4]), sd_t([1,3,4]), {'C to G','C to T','C to A'});
     ylim([0, 2.5e-3]);
     title('Mutation from T Cycle');
